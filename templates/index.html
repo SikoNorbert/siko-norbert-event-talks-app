@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BigQuery Release Notes & Broadcaster</title>
+    <meta name="description" content="Track the latest Google Cloud BigQuery release notes and instantly share updates to Twitter/X with a smart composer.">
+    <!-- Google Fonts: Outfit & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Main Stylesheet -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="stars-bg"></div>
+    <div class="glowing-orb orb-1"></div>
+    <div class="glowing-orb orb-2"></div>
+
+    <header class="app-header">
+        <div class="container header-container">
+            <div class="logo-area">
+                <div class="logo-icon">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM13 17H11V15H13V17ZM13 13H11V7H13V13Z" fill="currentColor"/>
+                    </svg>
+                </div>
+                <div class="logo-text">
+                    <h1>BigQuery Release Notes</h1>
+                    <span id="feed-meta">Connecting to feed...</span>
+                </div>
+            </div>
+            
+            <div class="actions-area">
+                <button id="btn-refresh" class="btn btn-primary" aria-label="Refresh release notes">
+                    <svg class="icon-spinner" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 4V2C6.48 2 2 6.48 2 12H4C4 7.58 7.58 4 12 4ZM12 20C16.42 20 20 16.42 20 12H22C22 17.52 17.52 22 12 22V20ZM20 12C20 7.58 16.42 4 12 4V2C17.52 2 22 6.48 22 12H20ZM4 12C4 16.42 7.58 20 12 20V22C6.48 22 2 17.52 2 12H4Z" fill="currentColor"/>
+                    </svg>
+                    <span>Refresh</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="container app-content">
+        <aside class="sidebar">
+            <div class="sidebar-card glass-panel">
+                <h2>Search & Filters</h2>
+                
+                <div class="form-group">
+                    <label for="search-input">Search Keywords</label>
+                    <div class="input-wrapper">
+                        <svg class="search-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M15.5 14H14.71L14.43 13.73C15.41 12.59 16 11.11 16 9.5C16 5.91 13.09 3 9.5 3C5.91 3 3 5.91 3 9.5C3 13.09 5.91 16 9.5 16C11.11 16 12.59 15.41 13.73 14.43L14 14.71V15.5L19 20.49L20.49 19L15.5 14ZM9.5 14C7.01 14 5 11.99 5 9.5C5 7.01 7.01 5 9.5 5C11.99 5 14 7.01 14 9.5C14 11.99 11.99 14 9.5 14Z" fill="currentColor"/>
+                        </svg>
+                        <input type="text" id="search-input" placeholder="Type to filter...">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Filter by Type</label>
+                    <div class="checkbox-group">
+                        <label class="checkbox-container">
+                            <input type="checkbox" value="Feature" checked>
+                            <span class="checkmark type-feature"></span>
+                            Feature
+                        </label>
+                        <label class="checkbox-container">
+                            <input type="checkbox" value="Change" checked>
+                            <span class="checkmark type-change"></span>
+                            Change
+                        </label>
+                        <label class="checkbox-container">
+                            <input type="checkbox" value="Deprecated" checked>
+                            <span class="checkmark type-deprecated"></span>
+                            Deprecated
+                        </label>
+                        <label class="checkbox-container">
+                            <input type="checkbox" value="Known Issue" checked>
+                            <span class="checkmark type-issue"></span>
+                            Known Issue
+                        </label>
+                        <label class="checkbox-container">
+                            <input type="checkbox" value="Security" checked>
+                            <span class="checkmark type-security"></span>
+                            Security
+                        </label>
+                        <label class="checkbox-container">
+                            <input type="checkbox" value="Update" checked>
+                            <span class="checkmark type-update"></span>
+                            General Update
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="sidebar-footer">
+                    <button id="btn-reset-filters" class="btn btn-secondary btn-sm">Reset Filters</button>
+                </div>
+            </div>
+        </aside>
+
+        <section class="feed-section">
+            <div id="loading-state" class="loading-state glass-panel">
+                <div class="spinner-large"></div>
+                <p>Fetching latest release notes from Google Cloud...</p>
+            </div>
+
+            <div id="error-state" class="error-state glass-panel hidden">
+                <div class="error-icon">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM13 17H11V15H13V17ZM13 13H11V7H13V13Z" fill="currentColor"/>
+                    </svg>
+                </div>
+                <h3>Oops! Something went wrong</h3>
+                <p id="error-message">Could not fetch release notes at this time.</p>
+                <button id="btn-retry" class="btn btn-primary">Try Again</button>
+            </div>
+
+            <div id="empty-state" class="empty-state glass-panel hidden">
+                <h3>No Release Notes Found</h3>
+                <p>Try adjusting your search query or filters.</p>
+            </div>
+
+            <div id="feed-container" class="feed-container">
+                <!-- Days and cards will be dynamically injected here -->
+            </div>
+        </section>
+    </main>
+
+    <!-- Floating Action Bar for Selected Cards -->
+    <div id="floating-bar" class="floating-bar hidden">
+        <div class="floating-bar-content glass-panel">
+            <div class="selection-info">
+                <span class="selection-count">1 update selected</span>
+            </div>
+            <div class="selection-actions">
+                <button id="btn-deselect" class="btn btn-secondary btn-sm">Deselect</button>
+                <button id="btn-compose-tweet" class="btn btn-accent">
+                    <!-- Twitter/X logo SVG -->
+                    <svg class="btn-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" fill="currentColor"/>
+                    </svg>
+                    <span>Draft Tweet</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Twitter Composer Modal (using HTML5 dialog element) -->
+    <dialog id="tweet-dialog" class="tweet-dialog glass-panel">
+        <div class="dialog-header">
+            <h2>Compose Tweet</h2>
+            <button id="btn-close-dialog" class="btn-close" aria-label="Close dialog">&times;</button>
+        </div>
+        <div class="dialog-body">
+            <div class="selected-update-preview">
+                <span class="preview-tag type-feature" id="preview-type">Feature</span>
+                <span class="preview-date" id="preview-date">July 01, 2026</span>
+                <p class="preview-text" id="preview-text">Selected update content goes here...</p>
+            </div>
+            
+            <div class="form-group">
+                <label for="tweet-textarea">Tweet Content</label>
+                <textarea id="tweet-textarea" rows="6" maxlength="500" placeholder="What would you like to tweet?"></textarea>
+                <div class="textarea-footer">
+                    <span id="char-counter" class="char-counter">0 / 280</span>
+                    <button id="btn-shorten-tweet" class="btn btn-secondary btn-xs" title="Automatically shrink text to fit 280 chars">Auto-Shorten</button>
+                </div>
+            </div>
+        </div>
+        <div class="dialog-footer">
+            <button id="btn-cancel-dialog" class="btn btn-secondary">Cancel</button>
+            <button id="btn-publish-tweet" class="btn btn-accent">
+                <svg class="btn-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" fill="currentColor"/>
+                </svg>
+                <span>Share on X</span>
+            </button>
+        </div>
+    </dialog>
+
+    <footer class="app-footer-bottom">
+        <p>&copy; 2026 BigQuery Release Notes Broadcaster. Built with Flask &amp; Modern Vanilla Web API.</p>
+    </footer>
+
+    <!-- App Script -->
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
