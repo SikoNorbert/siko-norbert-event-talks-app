@@ -39,7 +39,7 @@ function setupEventListeners() {
     if (btnEmptyReset) {
         btnEmptyReset.addEventListener('click', resetFilters);
     }
-    
+
     // Filters
     searchInput.addEventListener('input', filterFeed);
     filterCheckboxes.forEach(cb => cb.addEventListener('change', filterFeed));
@@ -58,10 +58,10 @@ async function fetchReleaseNotes() {
     try {
         const response = await fetch('/api/release-notes');
         const data = await response.json();
-        
+
         if (data.success) {
             releaseNotes = data.entries;
-            
+
             // Format Last Updated Text
             if (data.updated) {
                 const date = new Date(data.updated);
@@ -70,7 +70,7 @@ async function fetchReleaseNotes() {
             } else {
                 feedMeta.textContent = 'Last feed update: Unknown';
             }
-            
+
             renderFeed(releaseNotes);
             updateFilterCounters();
             if (btnExportCsv) btnExportCsv.disabled = false;
@@ -104,27 +104,27 @@ function stripHtml(html) {
 // Render feed entries to the screen
 function renderFeed(entries) {
     feedContainer.innerHTML = '';
-    
+
     if (entries.length === 0) {
         emptyState.classList.remove('hidden');
         feedContainer.classList.add('hidden');
         return;
     }
-    
+
     emptyState.classList.add('hidden');
     feedContainer.classList.remove('hidden');
-    
+
     entries.forEach((entry, entryIndex) => {
         // Create Day Group
         const dayGroup = document.createElement('article');
         dayGroup.className = 'day-group';
-        
+
         // Day Title Header
         const dayTitle = document.createElement('h3');
         dayTitle.className = 'day-title';
         dayTitle.textContent = entry.date;
         dayGroup.appendChild(dayTitle);
-        
+
         // Render individual updates for this day
         entry.updates.forEach((update, updateIndex) => {
             const card = document.createElement('div');
@@ -132,11 +132,11 @@ function renderFeed(entries) {
             card.dataset.date = entry.date;
             card.dataset.link = entry.link;
             card.dataset.type = update.type;
-            
+
             // Generate a unique ID for selection tracking
             const updateId = `${entryIndex}-${updateIndex}`;
             card.dataset.id = updateId;
-            
+
             // Build badge class based on type
             let badgeClass = 'badge-update';
             const normType = update.type.toLowerCase();
@@ -145,7 +145,7 @@ function renderFeed(entries) {
             else if (normType.includes('deprecat')) badgeClass = 'badge-deprecated';
             else if (normType.includes('issue')) badgeClass = 'badge-issue';
             else if (normType.includes('security')) badgeClass = 'badge-security';
-            
+
             card.innerHTML = `
                 <header class="card-header">
                     <div class="card-header-left">
@@ -162,17 +162,17 @@ function renderFeed(entries) {
                             <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <path d="M19 19H5V5H12V3H5C3.89 3 3 3.9 3 5V19C3 20.1 3.89 21 5 21H19C20.1 21 21 20.1 21 19V12H19V19ZM14 3V5H17.59L7.76 14.83L9.17 16.24L19 6.41V10H21V3H14Z" fill="currentColor"/>
                             </svg>
-                        </a>
+                        </a>` : ''}
                     </div>
                 </header>
                 <div class="card-body">
                     ${update.content}
                 </div>
             `;
-            
+
             // Save original HTML for search highlighting reset
             card._originalHtml = update.content;
-            
+
             // Add copy button click listener
             const copyBtn = card.querySelector('.copy-btn');
             if (copyBtn) {
@@ -181,10 +181,10 @@ function renderFeed(entries) {
                     copyCardToClipboard(update, entry.date, copyBtn);
                 });
             }
-            
+
             dayGroup.appendChild(card);
         });
-        
+
         feedContainer.appendChild(dayGroup);
     });
 }
@@ -192,48 +192,48 @@ function renderFeed(entries) {
 // Client Side Search and Filters
 function filterFeed() {
     const query = searchInput.value.toLowerCase().trim();
-    
+
     // Get active checkboxes
     const checkedTypes = Array.from(filterCheckboxes)
         .filter(cb => cb.checked)
         .map(cb => cb.value.toLowerCase());
-        
+
     let visibleCardsCount = 0;
-    
+
     // Filter each group
     document.querySelectorAll('.day-group').forEach(group => {
         let visibleCardsInGroup = 0;
-        
+
         group.querySelectorAll('.update-card').forEach(card => {
             const cardBody = card.querySelector('.card-body');
-            
+
             // Restore original HTML to remove previous highlighting
             if (card._originalHtml) {
                 cardBody.innerHTML = card._originalHtml;
             }
-            
+
             const cardType = card.dataset.type.toLowerCase();
             const cardDate = card.dataset.date.toLowerCase();
             const cardText = cardBody.textContent.toLowerCase();
-            
+
             // Match type checkbox
             let matchesType = false;
             checkedTypes.forEach(t => {
                 if (t === 'update' && cardType === 'update') matchesType = true;
                 else if (cardType.includes(t)) matchesType = true;
             });
-            
+
             // Match search text
-            const matchesSearch = query === '' || 
-                cardText.includes(query) || 
-                cardType.includes(query) || 
+            const matchesSearch = query === '' ||
+                cardText.includes(query) ||
+                cardType.includes(query) ||
                 cardDate.includes(query);
-                
+
             if (matchesType && matchesSearch) {
                 card.classList.remove('hidden');
                 visibleCardsInGroup++;
                 visibleCardsCount++;
-                
+
                 // Highlight search matches
                 if (query) {
                     highlightSearchQuery(cardBody, query);
@@ -242,7 +242,7 @@ function filterFeed() {
                 card.classList.add('hidden');
             }
         });
-        
+
         // Hide entire group if no cards are visible
         if (visibleCardsInGroup > 0) {
             group.classList.remove('hidden');
@@ -250,19 +250,19 @@ function filterFeed() {
             group.classList.add('hidden');
         }
     });
-    
+
     // Show empty state if no matching notes
     if (visibleCardsCount === 0 && releaseNotes.length > 0) {
         emptyState.classList.remove('hidden');
     } else if (releaseNotes.length > 0) {
         emptyState.classList.add('hidden');
     }
-    
+
     // Enable/disable CSV export button based on matches count
     if (btnExportCsv) {
         btnExportCsv.disabled = (visibleCardsCount === 0);
     }
-    
+
     // Update category badge counters dynamically
     updateFilterCounters();
 }
@@ -274,23 +274,20 @@ function resetFilters() {
     filterFeed();
 }
 
-
-
 // Copy individual card details to clipboard
 async function copyCardToClipboard(update, date, btn) {
-    const textToCopy = `BigQuery ${update.type} (${date}):\n${stripHtml(update.content).trim()}`;
+    const textToCopy = `BigQuery ${update.type} (${date}): \n${stripHtml(update.content).trim()}`;
     try {
         await navigator.clipboard.writeText(textToCopy);
-        
+
         // Visual feedback
         const origHtml = btn.innerHTML;
         btn.classList.add('copied');
         btn.innerHTML = `
             <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" fill="currentColor"/>
-            </svg>
-        `;
-        
+                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" fill="currentColor" />
+            </svg>`;
+
         setTimeout(() => {
             btn.classList.remove('copied');
             btn.innerHTML = origHtml;
@@ -303,34 +300,34 @@ async function copyCardToClipboard(update, date, btn) {
 // Export filtered release notes to CSV
 function exportToCSV() {
     if (releaseNotes.length === 0) return;
-    
+
     const query = searchInput.value.toLowerCase().trim();
     const checkedTypes = Array.from(filterCheckboxes)
         .filter(cb => cb.checked)
         .map(cb => cb.value.toLowerCase());
-        
+
     const filteredEntries = [];
-    
+
     releaseNotes.forEach(entry => {
         const matchingUpdates = entry.updates.filter(update => {
             const cardType = update.type.toLowerCase();
             const cardText = stripHtml(update.content).toLowerCase();
             const cardDate = entry.date.toLowerCase();
-            
+
             let matchesType = false;
             checkedTypes.forEach(t => {
                 if (t === 'update' && cardType === 'update') matchesType = true;
                 else if (cardType.includes(t)) matchesType = true;
             });
-            
-            const matchesSearch = query === '' || 
-                cardText.includes(query) || 
-                cardType.includes(query) || 
+
+            const matchesSearch = query === '' ||
+                cardText.includes(query) ||
+                cardType.includes(query) ||
                 cardDate.includes(query);
-                
+
             return matchesType && matchesSearch;
         });
-        
+
         if (matchingUpdates.length > 0) {
             matchingUpdates.forEach(update => {
                 filteredEntries.push({
@@ -342,17 +339,17 @@ function exportToCSV() {
             });
         }
     });
-    
+
     if (filteredEntries.length === 0) {
         alert('No release notes found to export matching current filters.');
         return;
     }
-    
+
     // Generate CSV contents
     const csvRows = [];
     // CSV Header
     csvRows.push(['Date', 'Type', 'Content', 'Link'].map(h => `"${h.replace(/"/g, '""')}"`).join(','));
-    
+
     // CSV Data Rows
     filteredEntries.forEach(row => {
         const values = [
@@ -363,17 +360,17 @@ function exportToCSV() {
         ];
         csvRows.push(values.map(val => `"${(val || '').replace(/"/g, '""')}"`).join(','));
     });
-    
+
     const csvContent = csvRows.join("\n");
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
-    
+
     const link = document.createElement("a");
     link.setAttribute("href", url);
     link.setAttribute("download", `bigquery_release_notes_${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
-    
+
     // Clean up
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
@@ -390,9 +387,9 @@ function updateThemeIcon() {
     const isLightMode = document.body.classList.contains('light-mode');
     const sunIcon = document.querySelector('.theme-icon-sun');
     const moonIcon = document.querySelector('.theme-icon-moon');
-    
+
     if (!sunIcon || !moonIcon) return;
-    
+
     if (isLightMode) {
         sunIcon.classList.add('hidden');
         moonIcon.classList.remove('hidden');
@@ -406,7 +403,7 @@ function updateThemeIcon() {
 function initTheme() {
     const savedTheme = localStorage.getItem('theme');
     const prefersLight = window.matchMedia('(prefers-color-scheme: light)').matches;
-    
+
     if (savedTheme === 'light' || (!savedTheme && prefersLight)) {
         document.body.classList.add('light-mode');
     } else {
@@ -419,21 +416,21 @@ function initTheme() {
 function highlightSearchQuery(element, query) {
     if (!query) return;
     const regex = new RegExp(`(${escapeRegExp(query)})`, 'gi');
-    
+
     const walk = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, null, false);
     const textNodes = [];
-    
+
     while (walk.nextNode()) {
         const node = walk.currentNode;
         if (node.nodeValue.trim().length > 0 && node.nodeValue.match(regex)) {
             textNodes.push(node);
         }
     }
-    
+
     textNodes.forEach(node => {
         const fragment = document.createDocumentFragment();
         const parts = node.nodeValue.split(regex);
-        
+
         parts.forEach(part => {
             if (part.match(regex)) {
                 const mark = document.createElement('mark');
@@ -444,7 +441,7 @@ function highlightSearchQuery(element, query) {
                 fragment.appendChild(document.createTextNode(part));
             }
         });
-        
+
         node.parentNode.replaceChild(fragment, node);
     });
 }
@@ -457,7 +454,7 @@ function escapeRegExp(string) {
 // Update filter checklist badge counts based on active text search matching
 function updateFilterCounters() {
     const query = searchInput.value.toLowerCase().trim();
-    
+
     const counts = {
         'feature': 0,
         'change': 0,
@@ -466,18 +463,18 @@ function updateFilterCounters() {
         'security': 0,
         'update': 0
     };
-    
+
     releaseNotes.forEach(entry => {
         entry.updates.forEach(update => {
             const cardType = update.type.toLowerCase();
             const cardText = stripHtml(update.content).toLowerCase();
             const cardDate = entry.date.toLowerCase();
-            
-            const matchesSearch = query === '' || 
-                cardText.includes(query) || 
-                cardType.includes(query) || 
+
+            const matchesSearch = query === '' ||
+                cardText.includes(query) ||
+                cardType.includes(query) ||
                 cardDate.includes(query);
-                
+
             if (matchesSearch) {
                 let matched = false;
                 for (const type in counts) {
@@ -493,7 +490,7 @@ function updateFilterCounters() {
             }
         });
     });
-    
+
     document.querySelectorAll('.filter-count').forEach(span => {
         const type = span.dataset.type;
         const count = counts[type] || 0;
